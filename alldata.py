@@ -307,7 +307,7 @@ def main():
 
             st.title("Getting the result...")
             ##############################################################################
-            model = load_model("/Users/vikram/Downloads/Emo/speech_audio.h5",compile=False)
+            model = load_model("/speech_audio.h5",compile=False)
 
             mfccs = get_mfccs(path, model.input_shape[-1])
             # desired_length = 162
@@ -325,12 +325,12 @@ def main():
 
             # ***********************************************
             data_fin, sample_rate_fin = librosa.load(
-                "/Users/vikram/Downloads/Emo"+str(path))
+                "/main"+str(path))
             data,sample_rate=data_fin,sample_rate_fin
             X = []
 
             feature = get_features(
-                "/Users/vikram/Downloads/Emo"+str(path))
+                "/main"+str(path))
             for ele in feature:
                 X.append(ele)
 
@@ -338,16 +338,16 @@ def main():
             X1 = Features.values
 
             x_test = X1
-            scaler = joblib.load('/Users/vikram/Downloads/Emo/scaler.pkl1')
+            scaler = joblib.load('/scaler.pkl1')
 
             # Use the loaded scaler to transform data
             x_test = scaler.transform(x_test)
             x_test = np.expand_dims(x_test, axis=2)
             print('====================>1')
-            path_checkpoint = "/Users/vikram/Downloads/Emo/training"
+            path_checkpoint = "/training"
             model.load_weights(path_checkpoint)
             pred_test = model.predict(x_test)
-            encoder_file = "/Users/vikram/Downloads/Emo/encoder1.npy"
+            encoder_file = "/encoder1.npy"
             encoder_categories = np.load(encoder_file, allow_pickle=True)
             categories_list = encoder_categories.tolist()[0]
             print("=================categories_list::",categories_list)
