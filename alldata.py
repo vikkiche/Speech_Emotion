@@ -57,12 +57,12 @@ st.markdown(
         unsafe_allow_html=True,
     )
 
-@st.cache
+@st.cache_data
 def save_audio(file):
     with open(os.path.join("audio", file.name), "wb") as f:
         f.write(file.getbuffer())
 
-@st.cache
+@st.cache_data
 def get_melspec(audio):
   y, sr = librosa.load(audio, sr=44100)
   X = librosa.stft(y)
@@ -74,7 +74,7 @@ def get_melspec(audio):
   rgbImage = np.repeat(grayImage[..., np.newaxis], 3, -1)
   return (rgbImage, Xdb)
 
-@st.cache
+@st.cache_data
 def get_mfccs(audio, limit):
   print("==========================audio",audio)
   print("==========================limit",limit)
@@ -88,13 +88,13 @@ def get_mfccs(audio, limit):
     mfccs[:, :a.shape[1]] = a
   return mfccs
 
-@st.cache
+@st.cache_data
 def get_title(predictions, categories=CAT6):
     title = f"Detected emotion: {categories[predictions.argmax()]} \
     - {predictions.max() * 100:.2f}%"
     return title
 
-@st.cache
+@st.cache_data
 def plot_emotions(fig, data6, data3=None, title="Detected emotion",
                   categories6=CAT6, categories3=CAT3):
 # CAT6 = ['angry', 'disgust', 'fear', 'happy', 'sad', 'surprise']
