@@ -59,8 +59,11 @@ st.markdown(
 
 @st.cache_data
 def save_audio(file):
+    if not os.path.exists("audio"):
+            os.makedirs("audio")
     with open(os.path.join("audio", file.name), "wb") as f:
         f.write(file.getbuffer())
+    return os.path.join("audio",file.name)
 
 @st.cache_data
 def get_melspec(audio):
@@ -263,11 +266,13 @@ def main():
 
         if audio_file is not None:
             st.title("Analyzing...")
-            file_details = {"Filename": audio_file.name, "FileSize": audio_file.size}
-            st.write(file_details)
+            #file_details = {"Filename": audio_file.name, "FileSize": audio_file.size}
+            file_details = save_audio(audio_file)
+            #st.write(file_details)
             # st.subheader(f"File {file_details['Filename']}")
             print("========================audio_file:::",audio_file.name)
-            st.audio(audio_file, format='audio/wav', start_time=0)
+           # st.audio(audio_file, format='audio/wav', start_time=0)
+            st.audio(file_details)
 
 
             ##############################################################################
@@ -277,7 +282,7 @@ def main():
 
             # extract features
             wav, sr = librosa.load(path, sr=44100)
-            Xdb = get_melspec(path)[1]
+            Xdb = get_melspec(file_details)[1]
             ##############################################################################
             fig, ax = plt.subplots(1, 2, figsize=(12, 4), sharex=True)
             fig.set_facecolor('#d1d1e0')
