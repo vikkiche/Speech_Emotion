@@ -59,23 +59,25 @@ st.markdown(
 
 @st.cache_data
 def save_audio(file):
-    if not os.path.exists("audio"):
-            os.makedirs("audio")
-    with open(os.path.join("audio", file.name), "wb") as f:
+    audio_dir = "audio"  # Ensure directory exists
+    if not os.path.exists(audio_dir):  # Create directory if it does not exist
+        os.makedirs(audio_dir)  # Specific change: Ensure directory creation
+    file_path = os.path.join(audio_dir, file.name)
+    with open(file_path, "wb") as f:
         f.write(file.getbuffer())
-    return os.path.join("audio",file.name)
+    return file_path  # Specific change: Return the file path
 
 @st.cache_data
 def get_melspec(audio):
-  y, sr = librosa.load(audio, sr=44100)
-  X = librosa.stft(y)
-  Xdb = librosa.amplitude_to_db(abs(X))
-  img = np.stack((Xdb,) * 3,-1)
-  img = img.astype(np.uint8)
-  grayImage = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-  grayImage = cv2.resize(grayImage, (224, 224))
-  rgbImage = np.repeat(grayImage[..., np.newaxis], 3, -1)
-  return (rgbImage, Xdb)
+    y, sr = librosa.load(audio, sr=44100)
+    X = librosa.stft(y)
+    Xdb = librosa.amplitude_to_db(abs(X))
+    img = np.stack((Xdb,) * 3, -1)
+    img = img.astype(np.uint8)
+    grayImage = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    grayImage = cv2.resize(grayImage, (224, 224))
+    rgbImage = np.repeat(grayImage[..., np.newaxis], 3, -1)
+    return (rgbImage, Xdb)
 
 @st.cache_data
 def get_mfccs(audio, limit):
@@ -83,13 +85,14 @@ def get_mfccs(audio, limit):
   print("==========================limit",limit)
 
   y, sr = librosa.load(audio, sr=44100)
-  a = librosa.feature.mfcc(y=y, sr=44100, n_mfcc = 162)
+  a = librosa.feature.mfcc(y, sr, n_mfcc = 40)# n_mfcc changed 162 to 40
   if a.shape[1] > limit:
     mfccs = a[:,:limit]
   elif a.shape[1] < limit:
     mfccs = np.zeros((a.shape[0], limit))
     mfccs[:, :a.shape[1]] = a
-  return mfccs
+  #return mfccs
+  return np.mean(mfccs.T, axis=0)  # Specific change: Return MFCC features
 
 @st.cache_data
 def get_title(predictions, categories=CAT6):
@@ -256,7 +259,7 @@ def main():
     if choice == "Upload audio":
 
         st.subheader("Upload audio")
-        audio_file = st.file_uploader("Upload audio file", type=['wav'])
+        audio_file = st.file_uploader("Upload audio file", type=['wav' , 'mp3'])
 
         if st.button('Record'):
             with st.spinner(f'Recording for 5 seconds ....'):
@@ -311,9 +314,13 @@ def main():
             data3 = np.array([.8, .9, .2])
 
             st.title("Getting the result...")
-            ##############################################################################
+        
             model = load_model("/speech_audio.h5",compile=False)
-
+                 ##############################################################################
+            data3 = get_mfccs(file_path, limit=3)  # Specific change: Get MFCC features
+            data3 = data3.reshape(1, *data3.shape)
+            y_pred = model.predict(data3)
+                ##############################################################################
             mfccs = get_mfccs(path, model.input_shape[-1])
             # desired_length = 162
             # padded_x = np.pad(mfccs, ((0, 0), (0, desired_length - mfccs.shape[1]), (0, 0)), mode='constant', constant_values=0)
@@ -362,7 +369,6 @@ def main():
 
             pred = new_encoder.inverse_transform(pred_test)
             print("======================pred:::",pred_test[0])
-            #Detected emotion: sad     - 100.00%
 
             # df = pd.DataFrame(columns=['Predicted Labels', 'Actual Labels'])
             # df['Predicted Labels'] = y_pred[0].flatten()
