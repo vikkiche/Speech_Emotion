@@ -59,7 +59,7 @@ st.markdown(
 
 @st.cache_data
 def save_audio(file):
-    audio_dir = "audio"  # Ensure directory exists
+    audio_dir = "speech_audio"  # Ensure directory exists
     if not os.path.exists(audio_dir):  # Create directory if it does not exist
         os.makedirs(audio_dir)  # Specific change: Ensure directory creation
     file_path = os.path.join(audio_dir, file.name)
