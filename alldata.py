@@ -644,16 +644,13 @@ def main():
             Xdb = get_melspec(path)[1]
 
             model_cnn = load_model("speech_audio.h5")
-            model_xgb = joblib.load("model_xgb.pkl")
-            model_mlp = load_model("model_mlp.h5")
-
+            model_xgb = joblib.load("scaler.pkl1")
+                #encoder1.npy
             cnn_predictions = model_cnn.predict(np.expand_dims(get_mfccs(path, 128), axis=0))
             xgb_predictions = model_xgb.predict(get_features(path))
-            mlp_predictions = model_mlp.predict(get_features(path))
 
             st.write(f"**CNN Prediction:** {get_title(cnn_predictions[0])}")
             st.write(f"**XGB Prediction:** {get_title(xgb_predictions[0], categories=CAT3)}")
-            st.write(f"**MLP Prediction:** {get_title(mlp_predictions[0], categories=CAT3)}")
 
             fig, ax = plt.subplots(1, 2, figsize=(15, 5))
             plot_emotions(fig, cnn_predictions[0])
