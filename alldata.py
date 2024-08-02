@@ -572,7 +572,7 @@ def noise(data):
     data = data + noise_amp * np.random.normal(size=data.shape[0])
     return data
 
-def stretch(data, rate=0.8):
+def stretch(data,rate):
     return librosa.effects.time_stretch(data, rate)
 
 def shift(data):
@@ -610,8 +610,8 @@ def get_features(data):
     noise_data = noise(data)
     res2 = extract_features(noise_data, sample_rate)
     result = np.vstack((result, res2))
-
-    new_data = stretch(data)
+    
+    new_data = stretch(data,0.8)
     data_stretch_pitch = pitch(new_data, sample_rate)
     res3 = extract_features(data_stretch_pitch, sample_rate)
     result = np.vstack((result, res3))
