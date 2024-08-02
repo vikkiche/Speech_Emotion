@@ -415,13 +415,6 @@ import joblib
 
 
 
-
-
-
-
-
-
-
 import sys
 import time
 import os
@@ -430,9 +423,10 @@ import matplotlib.pyplot as plt
 import streamlit as st
 import librosa
 import librosa.display
+import cv2
+import pandas as pd
 from tensorflow.keras.models import load_model
 import warnings
-import pandas as pd
 from sklearn.preprocessing import OneHotEncoder
 import joblib
 
@@ -489,19 +483,18 @@ def get_melspec(audio):
     grayImage = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     grayImage = cv2.resize(grayImage, (224, 224))
     rgbImage = np.repeat(grayImage[..., np.newaxis], 3, -1)
-    return (rgbImage, Xdb)
+    return rgbImage, Xdb
 
 @st.cache_data
 def get_mfccs(audio, limit):
     y, sr = librosa.load(audio, sr=44100)
-    a = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=40)  # Corrected call
+    a = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=40)
     if a.shape[1] > limit:
         mfccs = a[:, :limit]
     elif a.shape[1] < limit:
         mfccs = np.zeros((a.shape[0], limit))
         mfccs[:, :a.shape[1]] = a
     return np.mean(mfccs.T, axis=0)
-
 
 @st.cache_data
 def get_title(predictions, categories=CAT6):
@@ -510,8 +503,10 @@ def get_title(predictions, categories=CAT6):
 
 @st.cache_data
 def plot_emotions(fig, data6, data3=None, title="Detected emotion", categories6=CAT6, categories3=CAT3):
-    color_dict = {"fear": "grey", "positive": "green", "angry": "green", "happy": "orange",
-                  "sad": "purple", "negative": "red", "disgust": "red", "surprise": "lightblue"}
+    color_dict = {
+        "fear": "grey", "positive": "green", "angry": "green", "happy": "orange",
+        "sad": "purple", "negative": "red", "disgust": "red", "surprise": "lightblue"
+    }
 
     if data3 is None:
         pos = data6[3] + data6[5]
@@ -573,8 +568,7 @@ def noise(data):
     return data
 
 def stretch(data, rate=0.8):
-    return librosa.effects.time_stretch(data, rate=0.8)
-
+    return librosa.effects.time_stretch(data, rate=rate)
 
 def shift(data):
     shift_range = int(np.random.uniform(low=-5, high=5) * 1000)
@@ -617,11 +611,9 @@ def get_features(data):
     res3 = extract_features(data_stretch_pitch, sample_rate)
     result = np.vstack((result, [res3]))  # Ensure result remains 2D
 
-    # Convert to DataFrame
     Features = pd.DataFrame(result)
 
     return Features
-
 
 def main():
     st.title("Neu-Free Emotion Analysis for E-Care Buddy Hearing Product")
@@ -651,96 +643,29 @@ def main():
             wav, sr = librosa.load(path, sr=44100)
             Xdb = get_melspec(path)[1]
 
-            fig, ax = plt.subplots(1, 2, figsize=(12, 4), sharex=True)
-            fig.set_facecolor('#d1d1e0')
+            model_cnn = load_model("model_cnn.h5")
+            model_xgb = joblib.load("model_xgb.pkl")
+            model_mlp = load_model("model_mlp.h5")
 
-            plt.subplot(211)
-            plt.title("Waveform")
-            librosa.display.waveshow(wav, sr=sr)
-            plt.gca().axes.get_yaxis().set_visible(False)
-            plt.gca().axes.get_xaxis().set_visible(False)
-            plt.gca().axes.spines["right"].set_visible(False)
-            plt.gca().axes.spines["left"].set_visible(False)
-            plt.gca().axes.spines["top"].set_visible(False)
-            plt.gca().axes.spines["bottom"].set_visible(False)
-            plt.gca().axes.set_facecolor('#d1d1e0')
+            cnn_predictions = model_cnn.predict(np.expand_dims(get_mfccs(path, 128), axis=0))
+            xgb_predictions = model_xgb.predict(get_features(path))
+            mlp_predictions = model_mlp.predict(get_features(path))
 
-            plt.subplot(212)
-            plt.title("Mel-log-spectrogram")
-            librosa.display.specshow(Xdb, sr=sr, x_axis='time', y_axis='hz')
-            plt.gca().axes.get_yaxis().set_visible(False)
-            plt.gca().axes.spines["right"].set_visible(False)
-            plt.gca().axes.spines["left"].set_visible(False)
-            plt.gca().axes.spines["top"].set_visible(False)
-            st.write(fig)
+            st.write(f"**CNN Prediction:** {get_title(cnn_predictions[0])}")
+            st.write(f"**XGB Prediction:** {get_title(xgb_predictions[0], categories=CAT3)}")
+            st.write(f"**MLP Prediction:** {get_title(mlp_predictions[0], categories=CAT3)}")
 
-            data3 = np.array([.8, .9, .2])
-
-            st.title("Getting the result...")
-
-            model = load_model("speech_audio.h5", compile=False)
-
-            mfccs = get_mfccs(path, model.input_shape[-1])
-            # Debug print statements
-            print("Shape of mfccs:", mfccs.shape)
-            print("Flattened length of mfccs:", mfccs.flatten().shape)
-        
-            # Adjust the interpolation size to match the length of mfccs.flatten()
-            target_length = 162
-            current_length = mfccs.flatten().shape[0]
-        
-            if target_length != current_length:
-                new_arr = np.interp(np.linspace(0, 1, target_length), np.linspace(0, 1, current_length), mfccs.flatten())
-                new_arr = new_arr.reshape(target_length, 1)
-            else:
-                new_arr = mfccs.flatten().reshape(target_length, 1)
-            
-            new_arr = new_arr.reshape(1, *new_arr.shape)
-
-            # new_arr = np.interp(np.linspace(0, 1, 162), np.linspace(0, 1, 128), mfccs.flatten())
-            # new_arr = new_arr.reshape(162, 1)
-            # new_arr = new_arr.reshape(1, *new_arr.shape)
-
-            mfccs = mfccs.reshape(1, *mfccs.shape)
-            print(f"MFCCs shape: {mfccs.shape}")
-
-            feature = get_features(path)
-            X = [feature]
-
-            Features = pd.DataFrame(X)
-            X1 = Features.values
-
-            x_test = X1
-            scaler = joblib.load('scaler.pkl')
-
-            x_test = scaler.transform(x_test)
-            x_test = np.expand_dims(x_test, axis=2)
-            print('Scaled features')
-
-            model.load_weights("training")
-            pred_test = model.predict(x_test)
-            encoder_categories = np.load("encoder1.npy", allow_pickle=True).tolist()[0]
-            new_encoder = OneHotEncoder(categories=[encoder_categories])
-            new_encoder.fit(np.array(encoder_categories).reshape(-1, 1))
-
-            pred = new_encoder.inverse_transform(pred_test)
-            print(f"Predictions: {pred_test[0]}")
-
-            txt = f"Detected emotion: {pred[0][0]} - 100.00%"
-            print(f"Result: {txt}")
-
-            fig = plt.figure(figsize=(10, 4))
-            plot_emotions(data6=pred_test[0], fig=fig, title=txt)
-            st.write(fig)
+            fig, ax = plt.subplots(1, 2, figsize=(15, 5))
+            plot_emotions(fig, cnn_predictions[0])
+            st.pyplot(fig)
 
     elif choice == "Dataset analysis":
         st.subheader("Dataset analysis")
+        st.write("Dataset analysis functionality goes here.")
 
-    else:
+    elif choice == "About":
         st.subheader("About")
-        st.info("Contact: thiruvikkiramanp@gmail.com")
+        st.write("This application analyzes emotions from audio data.")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
-
-st.button("Re-run")
