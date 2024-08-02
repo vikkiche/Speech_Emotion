@@ -494,13 +494,14 @@ def get_melspec(audio):
 @st.cache_data
 def get_mfccs(audio, limit):
     y, sr = librosa.load(audio, sr=44100)
-    a = librosa.feature.mfcc(y, sr, n_mfcc=40)
+    a = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=40)  # Corrected call
     if a.shape[1] > limit:
         mfccs = a[:, :limit]
     elif a.shape[1] < limit:
         mfccs = np.zeros((a.shape[0], limit))
         mfccs[:, :a.shape[1]] = a
     return np.mean(mfccs.T, axis=0)
+
 
 @st.cache_data
 def get_title(predictions, categories=CAT6):
