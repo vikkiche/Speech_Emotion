@@ -1,24 +1,24 @@
-import sys
-import time
-import os
-import numpy as np
-import matplotlib.pyplot as plt
-import streamlit as st
-import cv2
-import librosa
-import librosa.display
-from tensorflow.keras.models import load_model
-import warnings
-import pandas as pd
-import numpy as np
-import os
-import sys
-import librosa
-import librosa.display
-from keras.models import load_model
-from sklearn.preprocessing import OneHotEncoder
-import warnings
-import joblib
+# import sys
+# import time
+# import os
+# import numpy as np
+# import matplotlib.pyplot as plt
+# import streamlit as st
+# import cv2
+# import librosa
+# import librosa.display
+# from tensorflow.keras.models import load_model
+# import warnings
+# import pandas as pd
+# import numpy as np
+# import os
+# import sys
+# import librosa
+# import librosa.display
+# from keras.models import load_model
+# from sklearn.preprocessing import OneHotEncoder
+# import warnings
+# import joblib
 
 # # load models
 # # model = load_model(".venv/audio.h5", compile=False)
@@ -643,7 +643,7 @@ def main():
             wav, sr = librosa.load(path, sr=44100)
             Xdb = get_melspec(path)[1]
 
-            model_cnn = load_model("model_cnn.h5")
+            model_cnn = load_model("speech_audio.h5")
             model_xgb = joblib.load("model_xgb.pkl")
             model_mlp = load_model("model_mlp.h5")
 
