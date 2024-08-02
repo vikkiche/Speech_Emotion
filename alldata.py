@@ -606,18 +606,22 @@ def get_features(data):
     data, sample_rate = librosa.load(data, duration=2.5, offset=0.6)
 
     res1 = extract_features(data, sample_rate)
-    result = np.array(res1)
+    result = np.array([res1])  # Ensure result is 2D
 
     noise_data = noise(data)
     res2 = extract_features(noise_data, sample_rate)
-    result = np.vstack((result, res2))
+    result = np.vstack((result, [res2]))  # Ensure result remains 2D
     
     new_data = stretch(data)
     data_stretch_pitch = pitch(new_data, sample_rate)
     res3 = extract_features(data_stretch_pitch, sample_rate)
-    result = np.vstack((result, res3))
+    result = np.vstack((result, [res3]))  # Ensure result remains 2D
 
-    return result
+    # Convert to DataFrame
+    Features = pd.DataFrame(result)
+
+    return Features
+
 
 def main():
     st.title("Neu-Free Emotion Analysis for E-Care Buddy Hearing Product")
