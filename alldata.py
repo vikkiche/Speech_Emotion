@@ -676,9 +676,25 @@ def main():
             model = load_model("speech_audio.h5", compile=False)
 
             mfccs = get_mfccs(path, model.input_shape[-1])
-            new_arr = np.interp(np.linspace(0, 1, 162), np.linspace(0, 1, 128), mfccs.flatten())
-            new_arr = new_arr.reshape(162, 1)
+            # Debug print statements
+            print("Shape of mfccs:", mfccs.shape)
+            print("Flattened length of mfccs:", mfccs.flatten().shape)
+        
+            # Adjust the interpolation size to match the length of mfccs.flatten()
+            target_length = 162
+            current_length = mfccs.flatten().shape[0]
+        
+            if target_length != current_length:
+                new_arr = np.interp(np.linspace(0, 1, target_length), np.linspace(0, 1, current_length), mfccs.flatten())
+                new_arr = new_arr.reshape(target_length, 1)
+            else:
+                new_arr = mfccs.flatten().reshape(target_length, 1)
+            
             new_arr = new_arr.reshape(1, *new_arr.shape)
+
+            # new_arr = np.interp(np.linspace(0, 1, 162), np.linspace(0, 1, 128), mfccs.flatten())
+            # new_arr = new_arr.reshape(162, 1)
+            # new_arr = new_arr.reshape(1, *new_arr.shape)
 
             mfccs = mfccs.reshape(1, *mfccs.shape)
             print(f"MFCCs shape: {mfccs.shape}")
