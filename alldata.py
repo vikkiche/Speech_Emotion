@@ -317,7 +317,7 @@ def main():
         
             model = load_model("speech_audio.h5",compile=False)
                  ##############################################################################
-            data3 = get_mfccs(file_path, limit=3)  # Specific change: Get MFCC features
+            data3 = get_mfccs(path, limit=3)  # Specific change: Get MFCC features
             data3 = data3.reshape(1, *data3.shape)
             y_pred = model.predict(data3)
                 ##############################################################################
